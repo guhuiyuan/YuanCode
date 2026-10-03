@@ -1,0 +1,54 @@
+# =============================================================================
+# Project: <YOUR PROJECT NAME>
+#
+# This file (Yuan.md) is the agent's project-level memory.
+# It is loaded into the system prompt on every request.
+#
+# Sections YuanCode understands out of the box:
+#   ## Stack          — languages, runtimes, package managers
+#   ## Conventions    — code style, file layout, naming
+#   ## Build / Test   — exact commands the agent should run
+#   ## Architecture   — high-level module boundaries
+#   ## Domain         — business rules the agent must respect
+#
+# Anything you write here is treated as authoritative guidance.
+# Use `Yuan.local.md` (gitignored) for personal overrides.
+# =============================================================================
+
+## Stack
+- TypeScript 5.7+
+- Node.js ≥ 20.10
+- Package manager: pnpm 10
+- Test framework: vitest
+
+## Conventions
+- All public exports must be typed (no `any`).
+- Prefer named exports; default exports only for React components.
+- Path alias: `@/` → `./src/`.
+- Tests must live next to the file they test (`foo.ts` ↔ `foo.test.ts`).
+- Never commit secrets; use `.env` (which is gitignored).
+
+## Build / Test
+- Install:    `pnpm install`
+- Build:      `pnpm build`
+- Test:       `pnpm test`
+- Lint:       `pnpm lint`
+- Typecheck:  `pnpm typecheck`
+
+## Architecture
+<!-- Describe the high-level module boundaries here. -->
+- `src/core/` — Harness core (AgentLoop, ToolRegistry, PermissionGate, …)
+- `src/tools/` — Built-in tools registered with the ToolRegistry
+- `src/extensions/` — Yuan.md / Skills / MCP / Hooks loaders
+- `src/model/` — Provider adapters (Anthropic / OpenAI / MiniMax / custom)
+- `src/cli/` — CLI command implementations
+- `src/tui/` — Ink-based terminal UI
+
+## Domain
+<!-- Domain-specific rules the agent must follow. -->
+- TBD: replace with project-specific business rules.
+
+## Things the agent must NOT do
+- Never edit files under `node_modules/`, `dist/`, or `.yuancode/`.
+- Never `rm -rf` outside the project root without explicit user confirmation.
+- Never push to a remote git without a clear user instruction.

@@ -1,0 +1,59 @@
+# YuanCode agent file scan filter (similar to .gitignore syntax)
+# Files matching these patterns are NOT visible to the agent.
+
+# VCS metadata
+.git/
+.svn/
+.hg/
+
+# Dependencies
+node_modules/
+.pnpm-store/
+vendor/
+
+# Build output
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# YuanCode runtime state (avoid recursion)
+.yuancode/
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+
+# Large data
+*.zip
+*.tar.gz
+*.tgz
+*.lock
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Media (too large to inline)
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.mp4
+*.mp3
+*.wav
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini

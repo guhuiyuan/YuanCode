@@ -1,0 +1,148 @@
+#!/usr/bin/env bash
+# =============================================================================
+# YuanCode setup script (Linux / macOS / Git Bash)
+#
+# Usage:
+#     ./bin/setup                  # full setup with interactive init wizard
+#     ./bin/setup --no-init        # install deps + .env only
+#     ./bin/setup --skip-install   # init wizard only (assumes deps installed)
+#     ./bin setup --help
+# =============================================================================
+set -euo pipefail
+
+# Resolve project root (the directory containing package.json).
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
+cd "$PROJECT_ROOT"
+
+# --- Color helpers --------------------------------------------------------
+if [[ -t 1 ]]; then
+  BOLD='\033[1m'; DIM='\033[2m'; RED='\033[31m'; GREEN='\033[32m'
+  YELLOW='\033[33m'; CYAN='\033[36m'; RESET='\033[0m'
+else
+  BOLD=''; DIM=''; RED=''; GREEN=''; YELLOW=''; CYAN=''; RESET=''
+fi
+
+info()    { printf "${CYAN}ℹ${RESET} %s\n" "$*"; }
+ok()      { printf "${GREEN}✔${RESET} %s\n" "$*"; }
+warn()    { printf "${YELLOW}⚠${RESET} %s\n" "$*"; }
+err()     { printf "${RED}✖${RESET} %s\n" "$*" >&2; }
+header()  { printf "\n${BOLD}${CYAN}==> %s${RESET}\n" "$*"; }
+
+# --- Args ------------------------------------------------------------------
+SKIP_INSTALL=0
+NO_INIT=0
+HELP=0
+for arg in "$@"; do
+  case "$arg" in
+    --skip-install) SKIP_INSTALL=1 ;;
+    --no-init)      NO_INIT=1 ;;
+    -h|--help)      HELP=1 ;;
+    *)              err "Unknown option: $arg"; HELP=1 ;;
+  esac
+done
+
+if [[ $HELP -eq 1 ]]; then
+  cat <<EOF
+YuanCode setup
+
+Options:
+  --skip-install   Skip \`pnpm install\` (assume already installed)
+  --no-init        Skip the interactive init wizard
+  -h, --help       Show this message
+EOF
+  exit 0
+fi
+
+header "YuanCode setup"
+info "Project root: $PROJECT_ROOT"
+
+# --- 1. Node version check -------------------------------------------------
+header "[1/4] Node version check"
+REQUIRED_NODE="20.10.0"
+if command -v node >/dev/null 2>&1; then
+  NODE_VERSION="$(node -v | sed 's/^v//')"
+  if [[ "$(printf '%s\n%s\n' "$REQUIRED_NODE" "$NODE_VERSION" | sort -V | head -n1)" == "$REQUIRED_NODE" ]]; then
+    ok "Node $NODE_VERSION >= $REQUIRED_NODE"
+  else
+    err "Node $NODE_VERSION is below required $REQUIRED_NODE"
+    err "Install Node 20+ via nvm / fnm / official installer."
+    err "  nvm:   nvm install 20 && nvm use 20"
+    err "  fnm:   fnm install 20 && fnm use 20"
+    exit 1
+  fi
+else
+  err "Node is not installed. Please install Node 20.10+ first."
+  exit 1
+fi
+
+# --- 2. pnpm check / install ----------------------------------------------
+header "[2/4] pnpm"
+if ! command -v pnpm >/dev/null 2>&1; then
+  warn "pnpm not found, attempting to install via npm"
+  if command -v npm >/dev/null 2>&1; then
+    npm install -g pnpm@10
+    ok "pnpm installed: $(pnpm -v)"
+  else
+    err "npm is not available. Please install pnpm manually: npm i -g pnpm"
+    exit 1
+  fi
+else
+  ok "pnpm $(pnpm -v) found"
+fi
+
+# --- 3. Install dependencies -----------------------------------------------
+header "[3/4] Install dependencies"
+if [[ $SKIP_INSTALL -eq 0 ]]; then
+  if [[ -d node_modules ]]; then
+    info "node_modules already exists, running pnpm install --frozen-lockfile"
+    pnpm install --frozen-lockfile || pnpm install
+  else
+    pnpm install
+  fi
+  ok "Dependencies installed inside project (node_modules/)"
+else
+  info "Skipping pnpm install (--skip-install)"
+fi
+
+# --- 4. .env file ---------------------------------------------------------
+header "[4/4] .env file"
+if [[ -f .env ]]; then
+  ok ".env already exists"
+else
+  if [[ -f .env.example ]]; then
+    cp .env.example .env
+    ok ".env created from .env.example"
+    info "Edit .env to set YUANCODE_API_KEY, or run \`yuancode init\` for the wizard"
+  else
+    warn ".env.example not found, skipping"
+  fi
+fi
+
+# --- 5. Optional init wizard ----------------------------------------------
+if [[ $NO_INIT -eq 0 ]]; then
+  header "Init wizard"
+  if command -v yuancode >/dev/null 2>&1; then
+    yuancode init || true
+  elif [[ -x "$PROJECT_ROOT/bin/yuancode.mjs" ]]; then
+    node "$PROJECT_ROOT/bin/yuancode.mjs" init || true
+  else
+    warn "Cannot locate yuancode binary, skipping init wizard"
+  fi
+else
+  info "Skipping init wizard (--no-init)"
+fi
+
+header "Done!"
+cat <<EOF
+${GREEN}YuanCode is ready.${RESET}
+
+Next steps:
+  ${BOLD}cd $PROJECT_ROOT${RESET}
+  ${BOLD}node bin/yuancode.mjs doctor${RESET}      # health check
+  ${BOLD}node bin/yuancode.mjs init${RESET}        # configure provider/API key (if not done)
+  ${BOLD}node bin/yuancode.mjs${RESET}             # start the TUI
+
+Tip: add YuanCode to PATH for convenience:
+  export PATH="\$PATH:$PROJECT_ROOT/bin"
+EOF

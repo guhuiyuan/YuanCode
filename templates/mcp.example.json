@@ -1,0 +1,37 @@
+{
+  "$comment": "YuanCode MCP servers config. Place at ~/.yuancode/mcp.json (user-wide) or <project>/.yuancode/mcp.json (project-wide). Project entries win on collision with user entries. Each server is auto-detected as stdio (has `command`) or Streamable HTTP (has `url`).",
+  "mcpServers": {
+    "echo": {
+      "comment": "Local stdio MCP server used by scripts/m6-smoke.mjs to verify the client end-to-end without external deps. Tools: mcp__echo__echo(message) and mcp__echo__add(a, b).",
+      "command": "node",
+      "args": ["./scripts/fixtures/mcp-echo-server.mjs"]
+    },
+    "filesystem": {
+      "comment": "Official Anthropic filesystem MCP server. Read/write/list files inside the project root.",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "."],
+      "env": {}
+    },
+    "fetch": {
+      "comment": "Official Anthropic fetch MCP server. Lets the agent GET arbitrary URLs.",
+      "command": "uvx",
+      "args": ["mcp-server-fetch"],
+      "env": {}
+    },
+    "github": {
+      "comment": "Official GitHub MCP server. Requires $GITHUB_TOKEN env var to be set.",
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN", "mcp/github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      }
+    },
+    "remoteExample": {
+      "comment": "Example remote MCP server over Streamable HTTP (OAuth bearer).",
+      "url": "https://mcp.example.com/v1",
+      "headers": {
+        "Authorization": "Bearer ${REMOTE_MCP_TOKEN}"
+      }
+    }
+  }
+}

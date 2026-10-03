@@ -1,0 +1,89 @@
+# =============================================================================
+# YuanCode user-level configuration
+#
+# Saved by `yuancode init` to:  ~/.yuancode/config.yaml
+# Loaded on every invocation; project-level `<project>/Yuan.md` overrides these.
+# =============================================================================
+
+model:
+  # Provider id. One of: minimax | anthropic | openai | custom
+  provider: minimax
+
+  # Model name. The default below works for MiniMax M3 via Anthropic-compatible
+  # endpoint. Change if your provider expects a different name.
+  model: MiniMax-M3
+
+  # API endpoint. Leave blank to use the provider's default.
+  baseUrl: https://api.minimaxi.com/anthropic
+
+  # API key. Prefer setting YUANCODE_API_KEY in your shell instead of writing it
+  # here. If you do write it here, the file ends up in ~/.yuancode/ which only
+  # your user account can read.
+  # apiKey: sk-api-...
+
+  # Maximum tokens per model response (Anthropic uses 8192 by default).
+  maxTokens: 8192
+
+  # Enable Anthropic prompt caching (`cache_control: ephemeral`).
+  cacheControl: ephemeral
+
+  # Sampling temperature (0.0 = deterministic, 1.0 = creative). Default 1.0.
+  temperature: 1.0
+
+# How the agent decides what it can do without asking.
+# Allowed: manual | acceptEdits | auto | plan
+#
+# - manual       Every file edit and shell command asks first.
+# - acceptEdits  File edits auto-pass; bash still asks.  (Default)
+# - auto         Agent evaluates actions with background safety checks.
+# - plan         Read-only exploration; all writes are blocked.
+permissionMode: acceptEdits
+
+limits:
+  # Hard cap on agent iterations per turn before forcing a final answer.
+  maxSteps: 50
+
+  # Total wall-clock budget per turn (ms). 30 minutes default.
+  totalTimeoutMs: 1800000
+
+  # Wall-clock budget per individual step (ms). 60 seconds default.
+  perStepTimeoutMs: 60000
+
+  # Maximum USD spend per turn (0 = no limit). Token usage is estimated via
+  # tiktoken and converted using provider-specific pricing tables.
+  maxCostUsd: 5.0
+
+  # How many tool calls may run concurrently per step. Read-only tools can run
+  # in parallel; write tools always serialize regardless of this value.
+  parallelTools: 8
+
+# Sandbox configuration for the `bash` tool.
+# Allowed: local | bubblewrap | docker | landlock
+#
+# - local       Process isolation via cwd + env-var stripping. Cross-platform.
+# - bubblewrap  Linux namespaces via `bwrap`. Requires `bwrap` on PATH.
+# - docker      Full container isolation via `docker run`. Requires Docker.
+# - landlock    Linux kernel-level FS sandboxing (5.13+). Linux only.
+sandbox:
+  mode: local
+
+  # Only used when mode=docker. Build with:
+  #   docker build -t yuancode/sandbox:latest bin/sandbox/
+  image: yuancode/sandbox:latest
+
+  # Extra writable paths outside the project root (rarely needed).
+  # extraWritable:
+  #   - /tmp
+
+# Logging level. Allowed: trace | debug | info | warn | error | silent
+logLevel: info
+
+# MCP servers (alternative to .yuancode/mcp.json per-project).
+# mcpServers:
+#   filesystem:
+#     command: npx
+#     args: ['-y', '@modelcontextprotocol/server-filesystem', '.']
+#   github:
+#     url: https://api.githubcopilot.com/mcp/
+#     headers:
+#       Authorization: Bearer ${GITHUB_TOKEN}

@@ -1,0 +1,16 @@
+# Default: Unix line endings everywhere
+* text=auto eol=lf
+
+# Windows scripts keep CRLF for native shell compatibility
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Common binary formats (defensive, even though none are tracked today)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary

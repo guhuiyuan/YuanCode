@@ -1,0 +1,3 @@
+# Reserved for future monorepo upgrade. Single package for now.
+packages:
+  - .

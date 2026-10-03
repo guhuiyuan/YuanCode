@@ -1,0 +1,81 @@
+# =============================================================================
+# YuanCode hooks example
+#
+# Place at:  ~/.yuancode/hooks.yaml         (applies to every project)
+#        or  <project>/.yuancode/hooks.yaml (applies to this project only)
+#
+# Each hook matches one lifecycle event. The matcher syntax is shell-style glob:
+#   tool name:        "bash" | "edit" | "write" | "*" (all)
+#   command matcher:  "rm -rf *" | "git push *" | "*"
+#
+# Hook types:
+#   type: bash   — run a shell command. Exit code 0 = allow, non-zero = deny.
+#                  stdout/stderr are logged. Special env vars:
+#                    $YUAN_TOOL_NAME, $YUAN_TOOL_INPUT_JSON, $YUAN_SESSION_ID
+#   type: http   — POST event JSON to a webhook URL. 2xx = allow.
+# =============================================================================
+
+hooks:
+  # --- Allow / deny tool calls ----------------------------------------------
+  PreToolUse:
+    # 1) Block any attempt to write inside .yuancode/ (runtime state)
+    - matcher: 'write'
+      type: bash
+      command: |
+        case "$YUAN_TOOL_INPUT_JSON" in
+          *".yuancode/"*) echo "BLOCKED: cannot write into .yuancode/" >&2; exit 1 ;;
+          *) exit 0 ;;
+        esac
+
+    # 2) Audit every bash command to .yuancode/logs/audit.log
+    - matcher: 'bash'
+      type: bash
+      command: |
+        mkdir -p .yuancode/logs
+        printf '%s\t%s\t%s\n' "$(date -Iseconds)" "$YUAN_SESSION_ID" "$YUAN_TOOL_INPUT_JSON" \
+          >> .yuancode/logs/audit.log
+        exit 0
+
+    # 3) Optionally forward sensitive tool calls to a webhook
+    # - matcher: 'bash'
+    #   type: http
+    #   url: http://localhost:9999/audit
+    #   timeoutMs: 1500
+
+  # --- Observe after the fact ------------------------------------------------
+  PostToolUse:
+    - matcher: '*'
+      type: bash
+      command: |
+        echo "[$(date +%H:%M:%S)] $YUAN_TOOL_NAME done" >> .yuancode/logs/trace.log
+        exit 0
+
+  # --- Lifecycle -------------------------------------------------------------
+  SessionStart:
+    - matcher: '*'
+      type: bash
+      command: |
+        echo "session $YUAN_SESSION_ID started at $(date)" >> .yuancode/logs/sessions.log
+        exit 0
+
+  SessionEnd:
+    - matcher: '*'
+      type: bash
+      command: |
+        echo "session $YUAN_SESSION_ID ended at $(date)" >> .yuancode/logs/sessions.log
+        exit 0
+
+  # --- Context compaction ----------------------------------------------------
+  PreCompact:
+    - matcher: '*'
+      type: bash
+      command: |
+        mkdir -p .yuancode/sessions/$YUAN_SESSION_ID/transcripts
+        # Hand off the current transcript to PreCompact hook for archival.
+        exit 0
+
+  # --- User prompt submitted --------------------------------------------------
+  UserPromptSubmit:
+    - matcher: '*'
+      type: bash
+      command: echo "[$(date +%H:%M:%S)] prompt received" >> .yuancode/logs/prompts.log

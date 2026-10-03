@@ -1,0 +1,43 @@
+# pricing.example.yaml
+#
+# Copy to ~/.yuancode/config.yaml under the `pricing:` key, or merge into
+# <project>/.yuancode/config.yaml. Any model not listed falls back to the
+# built-in defaults (see docs/cost-and-limits.md#built-in-defaults).
+#
+# All values are USD per 1 000 tokens. Cache prices default to:
+#   cacheRead  = input
+#   cacheWrite = 4 × input    (Anthropic's multiplier)
+
+pricing:
+  # Default for clone-and-go users
+  'MiniMax-M3':
+    input: 0.10
+    output: 0.30
+
+  # Anthropic — override if you have an enterprise discount
+  'claude-opus-4-5':
+    input: 15.0
+    output: 75.0
+    cacheRead: 1.50
+    cacheWrite: 18.75
+
+  'claude-sonnet-4-5':
+    input: 3.0
+    output: 15.0
+    cacheRead: 0.30
+    cacheWrite: 3.75
+
+  'claude-haiku-4-5':
+    input: 0.80
+    output: 4.0
+    cacheRead: 0.08
+    cacheWrite: 1.0
+
+  # OpenAI
+  'gpt-4o':
+    input: 2.5
+    output: 10.0
+
+  'gpt-4o-mini':
+    input: 0.15
+    output: 0.60
